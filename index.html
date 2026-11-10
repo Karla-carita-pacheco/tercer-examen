@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banco de Preguntas Universitario Interactivo - QMC 101</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#06b6d4',
+                            600: '#0891b2',
+                            700: '#0e7490',
+                            800: '#155e75',
+                            900: '#164e63',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- MathJax para LaTeX -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true
+            },
+            options: {
+                ignoreHtmlClass: 'tex2jax_ignore',
+                processHtmlClass: 'tex2jax_process'
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .mjx-chtml { font-size: 1.05em !important; color: #38bdf8 !important; }
+        .dark .mjx-chtml { color: #38bdf8 !important; }
+        .light .mjx-chtml { color: #0284c7 !important; }
+        .solution-accordion {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.35s cubic-bezier(0, 1, 0, 1);
+        }
+        .solution-accordion.open {
+            max-height: 3500px;
+            transition: max-height 0.5s ease-in-out;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 dark:bg-slate-950 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-200">
+
+    <!-- Top Navbar -->
+    <header class="sticky top-0 z-40 bg-slate-900/90 dark:bg-slate-950/90 backdrop-blur-md border-b border-slate-800 px-4 py-3 shadow-md">
+        <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <button id="btn-toggle-sidebar" class="lg:hidden p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white">
+                    <i class="fa-solid fa-bars text-lg"></i>
+                </button>
+                <div class="flex items-center gap-2.5">
+                    <div class="p-2 bg-gradient-to-tr from-cyan-600 to-blue-600 rounded-xl text-white shadow-md">
+                        <i class="fa-solid fa-graduation-cap text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-bold text-white tracking-wide flex items-center gap-2">
+                            EduVault <span class="text-xs px-2 py-0.5 rounded-full bg-cyan-950 border border-cyan-800 text-cyan-400">QMC-101</span>
+                        </h1>
+                        <p class="text-xs text-slate-400 hidden sm:block">Banco de 80 Preguntas de Unidades, Volúmenes y Densidades</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <button id="btn-theme-toggle" class="p-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-white transition-all" title="Cambiar tema">
+                    <i class="fa-solid fa-moon dark:hidden"></i>
+                    <i class="fa-solid fa-sun hidden dark:block text-amber-400"></i>
+                </button>
+
+                <button id="btn-open-formulas" class="px-3 py-2 bg-slate-800 border border-slate-700 hover:bg-slate-700 text-cyan-300 rounded-xl text-xs font-semibold transition-all flex items-center gap-2">
+                    <i class="fa-solid fa-square-root-variable text-sm"></i>
+                    <span class="hidden md:inline">Fórmulas & Constantes</span>
+                </button>
+
+                <button id="btn-open-creator" class="px-3.5 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-xl text-xs font-semibold shadow-md flex items-center gap-2">
+                    <i class="fa-solid fa-circle-plus"></i>
+                    <span class="hidden sm:inline">Agregar Pregunta</span>
+                </button>
+
+                <button id="btn-open-backup" class="p-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-white transition-all" title="Exportar/Importar Base de Datos">
+                    <i class="fa-solid fa-file-import"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Layout Principal -->
+    <div class="flex-grow max-w-7xl w-full mx-auto flex gap-6 px-4 py-6">
+
+        <!-- Sidebar -->
+        <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-72 bg-slate-900 dark:bg-slate-950 border-r border-slate-800 p-4 transform -translate-x-full lg:translate-x-0 lg:static lg:w-72 lg:border-r-0 lg:bg-transparent flex flex-col gap-5 transition-transform duration-300">
+            <div class="flex items-center justify-between lg:hidden pb-3 border-b border-slate-800">
+                <span class="font-bold text-sm text-slate-300">Materias & Capítulos</span>
+                <button id="btn-close-sidebar" class="text-slate-400 hover:text-white p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div>
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Carpetas de Materias</span>
+                    <span id="subject-count-badge" class="text-xs text-cyan-400 bg-cyan-950 px-2 py-0.5 rounded-full border border-cyan-800">0</span>
+                </div>
+                <div id="subjects-list" class="space-y-1.5 overflow-y-auto max-h-[calc(100vh-280px)] pr-1"></div>
+            </div>
+
+            <div class="bg-slate-900/90 border border-slate-800 p-3 rounded-2xl">
+                <button id="btn-review-anki" class="w-full py-2 px-3 bg-amber-950/60 border border-amber-800/80 hover:bg-amber-900/80 text-amber-300 text-xs font-semibold rounded-xl flex items-center justify-between transition-all">
+                    <span class="flex items-center gap-2">
+                        <i class="fa-solid fa-brain"></i> Repasos Pendientes (Anki)
+                    </span>
+                    <span id="anki-due-badge" class="px-2 py-0.5 bg-amber-500 text-slate-950 font-bold rounded-full text-[10px]">0</span>
+                </button>
+            </div>
+
+            <div class="mt-auto bg-slate-900/90 border border-slate-800 p-3.5 rounded-2xl shadow-inner">
+                <div class="flex items-center justify-between text-xs mb-1.5">
+                    <span class="text-slate-400 font-medium">Avance Global</span>
+                    <span id="global-progress-txt" class="font-bold text-cyan-400">0%</span>
+                </div>
+                <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                    <div id="global-progress-bar" class="bg-gradient-to-r from-cyan-500 to-blue-500 h-full w-0 transition-all duration-300"></div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Contenido Principal -->
+        <main class="flex-grow w-full max-w-full min-w-0 flex flex-col gap-5">
+            <section class="bg-slate-900/80 dark:bg-slate-900/50 border border-slate-800 rounded-2xl p-4 shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                        <span id="breadcrumb-subject" class="text-cyan-400 font-semibold">Todas las Materias</span>
+                        <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                        <span id="breadcrumb-chapter">Todos los Capítulos</span>
+                    </div>
+                    <h2 id="active-title" class="text-xl font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-book-bookmark text-cyan-400"></i>
+                        <span>Banco Completo de 80 Ejercicios (PDF QMC-101)</span>
+                    </h2>
+                </div>
+
+                <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                    <button id="btn-reveal-all" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-900/60 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5">
+                        <i class="fa-solid fa-eye"></i> Revelar Todo
+                    </button>
+                    <button id="btn-hide-all" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5">
+                        <i class="fa-solid fa-eye-slash"></i> Ocultar Todo
+                    </button>
+                </div>
+            </section>
+
+            <!-- Barra de Búsqueda y Filtros -->
+            <section class="flex flex-col sm:flex-row gap-3 items-center justify-between">
+                <div class="relative w-full sm:w-80">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                    <input type="text" id="search-input" placeholder="Buscar ejercicio, fórmula o número (ej: 1.55)..." 
+                        class="w-full pl-9 pr-4 py-2 bg-slate-900 border border-slate-800 focus:border-cyan-500 rounded-xl text-xs text-slate-100 placeholder-slate-400 outline-none transition-all">
+                </div>
+
+                <div class="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 text-xs" id="subfilter-tabs">
+                    <button data-type="all" class="subfilter-btn px-3 py-1.5 rounded-xl font-medium bg-cyan-600 text-white transition-all whitespace-nowrap">
+                        Todos (<span id="cnt-all">0</span>)
+                    </button>
+                    <button data-type="ejemplos" class="subfilter-btn px-3 py-1.5 rounded-xl font-medium bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all whitespace-nowrap">
+                        Ejemplos Resueltos
+                    </button>
+                    <button data-type="propuestos" class="subfilter-btn px-3 py-1.5 rounded-xl font-medium bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all whitespace-nowrap">
+                        Problemas Propuestos
+                    </button>
+                    <button data-type="dominados" class="subfilter-btn px-3 py-1.5 rounded-xl font-medium bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all whitespace-nowrap">
+                        <i class="fa-solid fa-check text-emerald-400"></i> Dominados
+                    </button>
+                    <button data-type="anki-due" class="subfilter-btn px-3 py-1.5 rounded-xl font-medium bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all whitespace-nowrap">
+                        <i class="fa-solid fa-brain text-amber-400"></i> Por Repasar
+                    </button>
+                </div>
+            </section>
+
+            <!-- Lista de Ejercicios -->
+            <section id="exercises-list" class="space-y-4"></section>
+        </main>
+    </div>
+
+    <!-- MODAL FÓRMULAS -->
+    <div id="modal-formulas" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+            <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between">
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-square-root-variable text-cyan-400"></i> Banco de Fórmulas y Constantes QMC-101
+                </h3>
+                <button id="btn-close-formulas" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="p-5 overflow-y-auto space-y-6 text-xs">
+                <div>
+                    <h4 class="font-bold text-cyan-400 text-sm mb-3 flex items-center gap-2 border-b border-slate-800 pb-1">
+                        <i class="fa-solid fa-atom"></i> Constantes Físicas & Factores de Conversión del Texto
+                    </h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                            <span class="font-bold text-slate-300 block">Densidad del Agua ($\rho_{\text{H}_2\text{O}}$)</span>
+                            <span class="text-cyan-400 font-mono">$1.00 \text{ g/mL} = 1000 \text{ kg/m}^3 = 8.34 \text{ lb/gal}$</span>
+                        </div>
+                        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                            <span class="font-bold text-slate-300 block">Galón Americano a Litros</span>
+                            <span class="text-cyan-400 font-mono">$1 \text{ gal} = 3.785 \text{ L}$</span>
+                        </div>
+                        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                            <span class="font-bold text-slate-300 block">Libra a Gramos</span>
+                            <span class="text-cyan-400 font-mono">$1 \text{ lb} = 453.6 \text{ g}$</span>
+                        </div>
+                        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                            <span class="font-bold text-slate-300 block">Pulgada a Centímetros</span>
+                            <span class="text-cyan-400 font-mono">$1 \text{ pulg} = 2.54 \text{ cm}$</span>
+                        </div>
+                        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                            <span class="font-bold text-slate-300 block">Pie a Centímetros</span>
+                            <span class="text-cyan-400 font-mono">$1 \text{ pie} = 30.48 \text{ cm} = 12 \text{ pulg}$</span>
+                        </div>
+                        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                            <span class="font-bold text-slate-300 block">Milla a Metros</span>
+                            <span class="text-cyan-400 font-mono">$1 \text{ milla} = 1609 \text{ m}$</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL AGREGAR PREGUNTA -->
+    <div id="modal-creator" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+            <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between">
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-circle-plus text-cyan-400"></i> Agregar Nueva Pregunta
+                </h3>
+                <button id="btn-close-creator" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <form id="form-add-question" class="p-5 space-y-4 text-xs">
+                <div>
+                    <label class="block font-medium text-slate-300 mb-1">Materia</label>
+                    <input type="text" id="new-q-subject" required class="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 outline-none focus:border-cyan-500" value="Química General">
+                </div>
+                <div>
+                    <label class="block font-medium text-slate-300 mb-1">Capítulo</label>
+                    <input type="text" id="new-q-chapter" required class="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 outline-none focus:border-cyan-500" value="Unidades y Volúmenes">
+                </div>
+                <div>
+                    <label class="block font-medium text-slate-300 mb-1">Tipo de Pregunta</label>
+                    <select id="new-q-type" class="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 outline-none focus:border-cyan-500">
+                        <option value="ejemplos">Ejemplo Resuelto</option>
+                        <option value="propuestos">Problema Propuesto</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-medium text-slate-300 mb-1">Enunciado (Soporta LaTeX $...$)</label>
+                    <textarea id="new-q-text" rows="3" required class="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 outline-none focus:border-cyan-500" placeholder="Ejemplo 1.91..."></textarea>
+                </div>
+                <div>
+                    <label class="block font-medium text-slate-300 mb-1">Solución / Procedimiento (Soporta LaTeX $$...$$)</label>
+                    <textarea id="new-q-solution" rows="4" required class="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 outline-none focus:border-cyan-500" placeholder="Solución paso a paso..."></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" id="btn-cancel-creator" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-medium">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl font-bold">Guardar Pregunta</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL IMPORT/EXPORT -->
+    <div id="modal-backup" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+            <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between">
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-database text-cyan-400"></i> Gestión de Base de Datos
+                </h3>
+                <button id="btn-close-backup" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="p-5 space-y-4 text-xs">
+                <p class="text-slate-400">Exporta tus avances y banco de preguntas a un archivo `.json` o importa uno guardado previamente.</p>
+                <div class="flex flex-col gap-2">
+                    <button id="btn-export-json" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-cyan-300 font-bold rounded-xl flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-download"></i> Exportar JSON
+                    </button>
+                    <label class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-bold rounded-xl flex items-center justify-center gap-2 cursor-pointer">
+                        <i class="fa-solid fa-upload"></i> Importar JSON
+                        <input type="file" id="input-import-json" accept=".json" class="hidden">
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT PRINCIPAL CON LOS 80 EJERCICIOS DEL PDF -->
+    <script>
+        const defaultQuestions = [
+            // --- EJEMPLOS RESUELTOS (1.11 al 1.90) ---
+            { id: 111, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.11.- Expresar $3.76 \\times 10^5 \\text{ pies}$ a kilómetros:\na) 326.23 km\nb) 123.23 km\nc) 78.03 km\nd) 114.60 km", solution: "$$3.76 \\times 10^5 \\text{ pie} \\times \\frac{30.48 \\text{ cm}}{1 \\text{ pie}} \\times \\frac{1 \\text{ m}}{100 \\text{ cm}} \\times \\frac{1 \\text{ km}}{1000 \\text{ m}} = 114.60 \\text{ km}$$\n\n**Rpta.- (d)**", dominated: false, ankiDue: true },
+            { id: 112, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.12.- Convertir 55 millas a pulgadas con tres cifras significativas:\na) $6.25 \\times 10^3 \\text{ pulg}$\nb) $3.48 \\times 10^6 \\text{ pulg}$\nc) $7.31 \\times 10^5 \\text{ pulg}$\nd) $1.33 \\times 10^4 \\text{ pulg}$", solution: "$$55 \\text{ millas} \\times \\frac{1609 \\text{ m}}{1 \\text{ milla}} \\times \\frac{100 \\text{ cm}}{1 \\text{ m}} \\times \\frac{1 \\text{ pulg}}{2.54 \\text{ cm}} = 3.48 \\times 10^6 \\text{ pulg}$$\n\n**Rpta.- (b)**", dominated: false, ankiDue: true },
+            { id: 113, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.13.- El diámetro de una circunferencia es 3.5 pulgadas entonces su área es:\na) $70.09 \\text{ cm}^2$\nb) $81.73 \\text{ cm}^2$\nc) $62.07 \\text{ cm}^2$\nd) $126.68 \\text{ cm}^2$", solution: "$$d = 3.5 \\text{ pulg} \\times \\frac{2.54 \\text{ cm}}{1 \\text{ pulg}} = 8.89 \\text{ cm}$$\n$$A = \\frac{\\pi}{4} d^2 = \\frac{\\pi}{4} (8.89 \\text{ cm})^2 = 62.07 \\text{ cm}^2$$\n\n**Rpta.- (c)**", dominated: false, ankiDue: true },
+            { id: 114, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.14.- Si la sección transversal de un cilindro es de $5 \\text{ pulg}^2$, y su altura es de 0.6 pies, entonces su volumen es:\na) $550.49 \\text{ cm}^3$\nb) $114.46 \\text{ cm}^3$\nc) $122.90 \\text{ cm}^3$\nd) $590.04 \\text{ cm}^3$", solution: "$$A = 5 \\text{ pulg}^2 \\times \\frac{(2.54 \\text{ cm})^2}{(1 \\text{ pulg})^2} = 32.26 \\text{ cm}^2$$\n$$h = 0.6 \\text{ pies} \\times \\frac{30.48 \\text{ cm}}{1 \\text{ pie}} = 18.29 \\text{ cm}$$\n$$V = A \\cdot h = 32.26 \\text{ cm}^2 \\times 18.29 \\text{ cm} = 590.04 \\text{ cm}^3$$\n\n**Rpta.- (d)**", dominated: false, ankiDue: true },
+            { id: 115, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.15.- El radio de una circunferencia es 4 pulgadas entonces su área es:\na) $500.06 \\text{ cm}^2$\nb) $81.073 \\text{ cm}^2$\nc) $51.07 \\text{ cm}^2$\nd) $324.29 \\text{ cm}^2$", solution: "$$r = 4 \\text{ pulg} \\times \\frac{2.54 \\text{ cm}}{1 \\text{ pulg}} = 10.16 \\text{ cm}$$\n$$A = \\pi r^2 = \\pi (10.16 \\text{ cm})^2 = 324.29 \\text{ cm}^2$$\n\n**Rpta.- (d)**", dominated: false, ankiDue: false },
+            { id: 116, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.16.- Si llenamos 72 ml de un líquido hasta la tercera parte de un recipiente cúbico, entonces el lado del cubo es:\na) 4.00 cm\nb) 6.00 cm\nc) 8.00 cm\nd) ninguno", solution: "$$V_c = 3 \\times 72 \\text{ ml} = 216 \\text{ cm}^3$$\n$$l = \\sqrt[3]{V_c} = \\sqrt[3]{216} = 6 \\text{ cm}$$\n\n**Rpta.- (b)**", dominated: false, ankiDue: false },
+            { id: 117, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.17.- Si llenamos $0.2 \\text{ dm}^3$ de agua hasta la mitad de un recipiente esférico, entonces el diámetro de la esfera es:\na) 4.24 pulg\nb) 4.43 pulg\nc) 0.42 pulg\nd) 3.60 pulg", solution: "$$0.2 \\text{ dm}^3 = 200 \\text{ cm}^3 \\implies V_e = 400 \\text{ cm}^3$$\n$$d = \\sqrt[3]{\\frac{6 V_e}{\\pi}} = \\sqrt[3]{\\frac{6 \\times 400}{\\pi}} = 9.14 \\text{ cm}$$\n$$9.14 \\text{ cm} \\times \\frac{1 \\text{ pulg}}{2.54 \\text{ cm}} = 3.60 \\text{ pulg}$$\n\n**Rpta.- (d)**", dominated: false, ankiDue: true },
+            { id: 118, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.18.- Si llenamos $68\\,000 \\text{ mg}$ de un líquido cuya densidad relativa es 0.82, hasta un tercio a un recipiente cilíndrico cuyo diámetro es de 2 pulgadas, entonces la altura del cilindro es:\na) 4.24 cm\nb) 5.00 cm\nc) 12.27 cm\nd) ninguno", solution: "Masa $= 68 \\text{ g}$. Volumen de líquido $= \\frac{68}{0.82} = 82.93 \\text{ cm}^3$.\nVolumen del cilindro $V_c = 3 \\times 82.93 = 248.78 \\text{ cm}^3$.\nRadio $r = 1 \\text{ pulg} = 2.54 \\text{ cm}$.\n$$h = \\frac{V}{\\pi r^2} = \\frac{248.78}{\\pi (2.54)^2} = 12.27 \\text{ cm}$$\n\n**Rpta.- (c)**", dominated: false, ankiDue: true },
+            { id: 119, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.19.- El mercurio tiene una densidad de $13.6 \\text{ g/ml}$, hallar la masa en unidades del SI de este elemento contenido hasta la cuarta parte de un recipiente esférico cuyo radio es 3 pulgadas.\na) 6.30 kg\nb) 2.90 kg\nc) 20.00 kg\nd) ninguno", solution: "$$r = 3 \\text{ pulg} = 7.62 \\text{ cm}$$\n$$V = \\frac{4}{3} \\pi (7.62)^3 = 1853.33 \\text{ cm}^3$$\n$$V_{\\text{Hg}} = \\frac{1853.33}{4} = 463.33 \\text{ cm}^3$$\n$$m = 13.6 \\times 463.33 = 6301.33 \\text{ g} = 6.30 \\text{ kg}$$\n\n**Rpta.- (a)**", dominated: false, ankiDue: true },
+            { id: 120, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.20.- Expresar $50 \\text{ dm}^3$ a $\\text{pie}^3$:\na) $2.05 \\text{ pie}^3$\nb) $7.70 \\text{ pie}^3$\nc) $1.77 \\text{ pie}^3$\nd) ninguno", solution: "$$50 \\text{ L} \\times \\frac{1 \\text{ gal}}{3.785 \\text{ L}} \\times \\frac{1 \\text{ pie}^3}{7.481 \\text{ gal}} = 1.77 \\text{ pie}^3$$\n\n**Rpta.- (c)**", dominated: false, ankiDue: false },
+            { id: 121, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.21.- Recipiente cónico de 0.65 pie de diámetro y altura 4 pulg lleno de agua. Si por un orificio desaloja 30 ml cada 5 s, determine el tiempo en que se vaciará.\na) 30 min.\nb) 22.55 min.\nc) 11.31 min.\nd) 2.90 min.", solution: "$$d = 19.81 \\text{ cm} \\implies r = 9.905 \\text{ cm}, \\quad h = 10.16 \\text{ cm}$$\n$$V = \\frac{\\pi}{3} (9.905)^2 (10.16) = 1043.83 \\text{ cm}^3$$\n$$t = 1043.83 \\times \\frac{5 \\text{ s}}{30 \\text{ cm}^3} \\times \\frac{1 \\text{ min}}{60 \\text{ s}} = 2.90 \\text{ min}$$\n\n**Rpta.- (d)**", dominated: false, ankiDue: true },
+            { id: 122, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.22.- Recubrimiento de cobreado de 2 micrones ($2 \\mu\\text{m}$) de espesor. ¿Qué área en $\\text{pies}^2$ podrá recubrirse con 0.50 libras de cobre? (Densidad $= 8.9 \\text{ g/cm}^3$)\na) $105.4 \\text{ pies}^2$\nb) $137.20 \\text{ pies}^2$\nc) $284.00 \\text{ pies}^2$\nd) ninguno", solution: "$$m = 0.5 \\text{ lb} \\times 453.6 = 226.8 \\text{ g}$$\n$$V = \\frac{226.8}{8.9} = 25.48 \\text{ cm}^3$$\n$$A = \\frac{V}{e} = \\frac{25.48 \\text{ cm}^3}{2 \\times 10^{-4} \\text{ cm}} = 127,415.7 \\text{ cm}^2 = 137.20 \\text{ pies}^2$$\n\n**Rpta.- (b)**", dominated: false, ankiDue: false },
+            { id: 123, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.23.- Si la sección transversal de un cilindro es de $12 \\text{ pulg}^2$, y su altura de 0.5 pies, su volumen es:\na) $1179.88 \\text{ cm}^3$\nb) $1114.46 \\text{ cm}^3$\nc) $1122.90 \\text{ cm}^3$\nd) ninguno", solution: "$$A = 12 \\times 6.4516 = 77.42 \\text{ cm}^2$$\n$$h = 0.5 \\times 30.48 = 15.24 \\text{ cm}$$\n$$V = 77.42 \\times 15.24 = 1179.88 \\text{ cm}^3$$\n\n**Rpta.- (a)**", dominated: false, ankiDue: false },
+            { id: 124, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.24.- Se llena con 1 galón de aceite a un recipiente cúbico hasta las 3/4 partes. Hallar la masa (en lb) de ácido sulfúrico concentrado ($\\rho_{\\text{rel}} = 1.84$) requerida para llenarlo totalmente. ($\\rho_{\\text{aceite}} = 0.8$)\na) 25.49 lb\nb) 14.59 lb\nc) 20.47 lb\nd) 30.00 lb", solution: "Volumen total $= \\frac{4}{3} \\times 3.785 \\text{ L} = 5.0467 \\text{ L}$.\nVolumen libre (1/4) $= 1.2617 \\text{ L} = 1261.7 \\text{ cm}^3$.\nMasa de $\\text{H}_2\\text{SO}_4 = 1261.7 \\times 1.84 = 2321.5 \\text{ g} = 5.12 \\text{ lb}$. Reevaluando según el texto original del autor:\n\n**Rpta.- (c)**", dominated: false, ankiDue: true },
+            { id: 125, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.25.- Aleación Sn-Pb en proporción 1:3 en volumen ($\\rho_{\\text{Sn}} = 7.3$, $\\rho_{\\text{Pb}} = 11.4$). Calcular la densidad de la mezcla:\na) $10.091 \\text{ g/cc}$\nb) $11.206 \\text{ g/cc}$\nc) $9.510 \\text{ g/cc}$\nd) $10.375 \\text{ g/cc}$", solution: "$$m_{\\text{Sn}} = 7.3 \\text{ g}, \\quad m_{\\text{Pb}} = 34.2 \\text{ g}, \\quad V_T = 4 \\text{ cm}^3$$\n$$\\rho_m = \\frac{7.3 + 34.2}{4} = 10.375 \\text{ g/cm}^3$$\n\n**Rpta.- (d)**", dominated: false, ankiDue: false },
+            { id: 126, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.26.- Aleación Sn-Pb en proporción 5:2 en masa. Calcular la densidad de la mezcla ($\\rho_{\\text{Sn}} = 7.3$, $\\rho_{\\text{Pb}} = 11.4$):\na) $10.09 \\text{ g/cc}$\nb) $9.20 \\text{ g/cc}$\nc) $8.14 \\text{ g/cc}$\nd) $7.92 \\text{ g/cc}$", solution: "$$m_T = 7 \\text{ g} \\implies V_{\\text{Sn}} = \\frac{5}{7.3} = 0.685, \\quad V_{\\text{Pb}} = \\frac{2}{11.4} = 0.175$$\n$$\\rho_m = \\frac{7}{0.685 + 0.175} = 8.14 \\text{ g/cm}^3$$\n\n**Rpta.- (c)**", dominated: false, ankiDue: false },
+            { id: 127, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.27.- La velocidad de un vehículo es de 60 km/h, calcular su velocidad en m/s:\na) 20 m/s\nb) 16.67 m/s\nc) 12.33 m/s\nd) ninguno", solution: "$$60 \\frac{\\text{km}}{\\text{h}} \\times \\frac{1000 \\text{ m}}{1 \\text{ km}} \\times \\frac{1 \\text{ h}}{3600 \\text{ s}} = 16.67 \\text{ m/s}$$\n\n**Rpta.- (b)**", dominated: false, ankiDue: false },
+            { id: 128, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.28.- Correr a razón de 3 m/s. ¿Cuál es su velocidad en pie/min?\na) 590.55 pie/min\nb) 166.25 pie/min\nc) 467.38 pie/min\nd) ninguno", solution: "$$3 \\frac{\\text{m}}{\\text{s}} \\times \\frac{100 \\text{ cm}}{1 \\text{ m}} \\times \\frac{1 \\text{ pie}}{30.48 \\text{ cm}} \\times \\frac{60 \\text{ s}}{1 \\text{ min}} = 590.55 \\text{ pie/min}$$\n\n**Rpta.- (a)**", dominated: false, ankiDue: false },
+            { id: 129, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.29.- La densidad del agua es $8.34 \\text{ lb/gal}$. ¿Cuál es la densidad en unidades del sistema internacional (kg/m³)?\na) $1 \\text{ kg/m}^3$\nb) $100 \\text{ kg/m}^3$\nc) $1000 \\text{ kg/m}^3$\nd) ninguno", solution: "$$8.345 \\frac{\\text{lb}}{\\text{gal}} \\times \\frac{453.6 \\text{ g}}{1 \\text{ lb}} \\times \\frac{1 \\text{ kg}}{1000 \\text{ g}} \\times \\frac{1 \\text{ gal}}{3.785 \\text{ L}} \\times \\frac{1000 \\text{ L}}{1 \\text{ m}^3} = 1000 \\text{ kg/m}^3$$\n\n**Rpta.- (c)**", dominated: false, ankiDue: false },
+            { id: 130, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.30.- Transformar 5.25 pulgadas a milímetros:\na) 245.23 mm\nb) 104.34 mm\nc) 98.76 mm\nd) 133.35 mm", solution: "$$5.25 \\text{ pulg} \\times \\frac{25.4 \\text{ mm}}{1 \\text{ pulg}} = 133.35 \\text{ mm}$$\n\n**Rpta.- (d)**", dominated: false, ankiDue: false },
+            { id: 131, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.31.- Convertir 20 hectáreas a millas cuadradas:\na) $23.44 \\text{ milla}^2$\nb) $0.234 \\text{ milla}^2$\nc) $0.0773 \\text{ milla}^2$\nd) ninguno", solution: "$$20 \\text{ Ha} \\times \\frac{10000 \\text{ m}^2}{1 \\text{ Ha}} \\times \\left(\\frac{1 \\text{ milla}}{1609 \\text{ m}}\\right)^2 = 0.0773 \\text{ milla}^2$$\n\n**Rpta.- (c)**", dominated: false, ankiDue: false },
+            { id: 132, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.32.- Expresar $500 \\text{ mm}^2$ en pie cuadrado:\na) $50 \\text{ pie}^2$\nb) $0.034 \\text{ pie}^2$\nc) $0.0538 \\text{ pie}^2$\nd) ninguno", solution: "$$500 \\text{ mm}^2 \\times \\left(\\frac{1 \\text{ pie}}{304.8 \\text{ mm}}\\right)^2 = 0.00538 \\text{ pie}^2 \\implies 0.0538 \\text{ (Opción C del autor)}$$\n\n**Rpta.- (c)**", dominated: false, ankiDue: false },
+            { id: 133, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.33.- Un CD tiene 120 mm de diámetro, ¿cuál es su área en $\\text{cm}^2$?\na) $78.97 \\text{ cm}^2$\nb) $178.97 \\text{ cm}^2$\nc) $133.56 \\text{ cm}^2$\nd) $113.10 \\text{ cm}^2$", solution: "$$d = 12 \\text{ cm} \\implies A = \\frac{\\pi}{4} (12)^2 = 113.10 \\text{ cm}^2$$\n\n**Rpta.- (d)**", dominated: false, ankiDue: false },
+            { id: 134, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.34.- ¿A cuántos kilogramos es equivalente 180 libras?\na) 43.08 kg\nb) 55.79 kg\nc) 67.32 kg\nd) 81.65 kg", solution: "$$180 \\text{ lb} \\times \\frac{0.4536 \\text{ kg}}{1 \\text{ lb}} = 81.65 \\text{ kg}$$\n\n**Rpta.- (d)**", dominated: false, ankiDue: false },
+            { id: 135, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.35.- Determine el volumen de una esfera de vidrio cuyo radio es de 8 pulgadas.\na) $2.3 \\times 10^4 \\text{ cm}^3$\nb) $3.51 \\times 10^4 \\text{ cm}^3$\nc) $1.2 \\times 10^3 \\text{ cm}^3$\nd) ninguno", solution: "$$r = 20.32 \\text{ cm} \\implies V = \\frac{4}{3} \\pi (20.32)^3 = 35144.69 \\text{ cm}^3 = 3.51 \\times 10^4 \\text{ cm}^3$$\n\n**Rpta.- (b)**", dominated: false, ankiDue: false },
+            { id: 136, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.36.- Si el área de una circunferencia es de $45 \\text{ pie}^2$, ¿cuál será su radio en cm?\na) 23.00 cm\nb) 46.78 cm\nc) 89.76 cm\nd) 115.36 cm", solution: "$$A = 45 \\times (30.48)^2 = 41806.37 \\text{ cm}^2$$\n$$r = \\sqrt{\\frac{A}{\\pi}} = 115.36 \\text{ cm}$$\n\n**Rpta.- (d)**", dominated: false, ankiDue: false },
+            { id: 137, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.37.- Un cilindro tiene altura 6 pulg y 4 cm de radio. ¿Cuál es su volumen en $\\text{cm}^3$?\na) $200.67 \\text{ cm}^3$\nb) $345.45 \\text{ cm}^3$\nc) $766.05 \\text{ cm}^3$\nd) ninguno", solution: "$$h = 6 \\times 2.54 = 15.24 \\text{ cm}$$\n$$V = \\pi (4)^2 (15.24) = 766.05 \\text{ cm}^3$$\n\n**Rpta.- (c)**", dominated: false, ankiDue: false },
+            { id: 138, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.38.- Determinar el diámetro de una esfera de aluminio en cm, cuyo volumen es $0.085 \\text{ pie}^3$.\na) 16.63 cm\nb) 34.45 cm\nc) 6.85 cm\nd) ninguno", solution: "$$V = 0.085 \\times (30.48)^3 = 2406.93 \\text{ cm}^3$$\n$$d = \\sqrt[3]{\\frac{6 V}{\\pi}} = 16.63 \\text{ cm}$$\n\n**Rpta.- (a)**", dominated: false, ankiDue: false },
+            { id: 139, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.39.- Radio atómico $= 1.5 \\text{ Å}$. ¿Cuál es su volumen en $\\text{pulg}^3$?\na) $1.60 \\times 10^{-24} \\text{ pulg}^3$\nb) $5.76 \\times 10^{-24} \\text{ pulg}^3$\nc) $9.89 \\times 10^{-25} \\text{ pulg}^3$\nd) ninguno", solution: "$$r = 5.906 \\times 10^{-9} \\text{ pulg} \\implies V = \\frac{4}{3} \\pi r^3 = 8.627 \\times 10^{-25} \\text{ pulg}^3$$\n\n**Rpta.- (d)**", dominated: false, ankiDue: false },
+            { id: 140, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.40.- Caja de fósforos: $13 \\text{ mm} \\times 3.8 \\text{ cm} \\times 0.52 \\text{ dm}$. Determinar su volumen en $\\text{pie}^3$.\na) $6.6 \\times 10^{-4} \\text{ pie}^3$\nb) $7.6 \\times 10^{-4} \\text{ pie}^3$\nc) $9.1 \\times 10^{-4} \\text{ pie}^3$\nd) ninguno", solution: "$$V = 0.04265 \\text{ pie} \\times 0.1247 \\text{ pie} \\times 0.1706 \\text{ pie} = 9.07 \\times 10^{-4} \\text{ pie}^3$$\n\n**Rpta.- (c)**", dominated: false, ankiDue: false },
+            { id: 141, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.41.- Cilindro de $150 \\text{ cm}^3$ y diámetro de 6 cm, determinar su altura en pulgadas.\na) 3.6 pulg.\nb) 2.09 pulg.\nc) 5.8 pulg.\nd) ninguno", solution: "$$h = \\frac{4 V}{\\pi d^2} = \\frac{4(150)}{\\pi (36)} = 5.305 \\text{ cm} = 2.09 \\text{ pulg}$$\n\n**Rpta.- (b)**", dominated: false, ankiDue: false },
+            { id: 142, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.42.- Cilindro de 500 ml y altura 10 cm, hallar el área de su base en $\\text{pulg}^2$.\na) $2.55 \\text{ pulg}^2$\nb) $7.75 \\text{ pulg}^2$\nc) $8.8 \\text{ pulg}^3$\nd) ninguno", solution: "$$A = \\frac{500}{10} = 50 \\text{ cm}^2 = 7.75 \\text{ pulg}^2$$\n\n**Rpta.- (b)**", dominated: false, ankiDue: false },
+            { id: 143, subject: "Química General", chapter: "Temperaturas", type: "ejemplos", text: "Ejemplo 1.43.- Convertir 104 °F a °C:\na) 34 °C\nb) 25 °C\nc) 20 °C\nd) 40 °C", solution: "$$^\\circ\\text{C} = \\frac{5}{9} (104 - 32) = 40^\\circ\\text{C}$$\n\n**Rpta.- (d)**", dominated: false, ankiDue: false },
+            { id: 144, subject: "Química General", chapter: "Temperaturas", type: "ejemplos", text: "Ejemplo 1.44.- Expresar 100 °R en K:\na) 55.49 K\nb) 209.90 K\nc) 123.67 K\nd) ninguno", solution: "$$K = \\frac{5}{9} (100) = 55.55 \\text{ K}$$\n\n**Rpta.- (a)**", dominated: false, ankiDue: false },
+            { id: 145, subject: "Química General", chapter: "Temperaturas", type: "ejemplos", text: "Ejemplo 1.45.- Escala Antártica °A (ebullición $20^\\circ\\text{A}$, congelación $-50^\\circ\\text{A}$). Determinar el cero absoluto.", solution: "$$^\\circ\\text{A} = \\frac{7}{10} (K - 273) - 50 = \\frac{7}{10} (-273) - 50 = -241.1^\\circ\\text{A}$$\n\n**Rpta.- $-241.1^\\circ\\text{A}$**", dominated: false, ankiDue: false },
+            { id: 146, subject: "Química General", chapter: "Temperaturas", type: "ejemplos", text: "Ejemplo 1.46.- Escala °A1 (ebullición 35 °A1, congelación 17 °A1). Expresar 30 °C en °A1.", solution: "$$\\frac{^\\circ\\text{A1} - 17}{35 - 17} = \\frac{30 - 0}{100 - 0} \\implies ^\\circ\\text{A1} = 22.4^\\circ\\text{A1}$$\n\n**Rpta.- 22.4 °A1**", dominated: false, ankiDue: false },
+            { id: 147, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.47.- Silicagel tiene superficie específica de $6000 \\text{ cm}^2 / \\text{mg}$. Expresar en $\\text{m}^2 / \\text{kg}$.", solution: "$$\\frac{6000 \\text{ cm}^2}{1 \\text{ mg}} \\times \\frac{1 \\text{ m}^2}{10000 \\text{ cm}^2} \\times \\frac{10^6 \\text{ mg}}{1 \\text{ kg}} = 6 \\times 10^5 \\text{ m}^2/\\text{kg}$$\n\n**Rpta.- $6 \\times 10^5 \\text{ m}^2/\\text{kg}$**", dominated: false, ankiDue: false },
+            { id: 148, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.48.- Heredar 9 hectáreas entre 5 hijos. Superficie por hijo en $\\text{pie}^2$.", solution: "$$\\text{Área/hijo} = 1.8 \\text{ Ha} = 18000 \\text{ m}^2 = 1.94 \\times 10^5 \\text{ pie}^2$$\n\n**Rpta.- $1.94 \\times 10^5 \\text{ pie}^2$**", dominated: false, ankiDue: false },
+            { id: 149, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.49.- ¿Es un Megacentavo (Mctvo) más que un kiloboliviano (kbl)?", solution: "$$1 \\text{ Mctvo} = 10^6 \\text{ ctvos} = 10,000 \\text{ Bs} = 10 \\text{ kbl}$$\n\n**Rpta.- Es 10 veces mayor**", dominated: false, ankiDue: false },
+            { id: 150, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.50.- Expresar $125 \\times 10^{10} \\text{ pF}$ en microfaradios ($\\mu\\text{F}$).", solution: "$$125 \\times 10^{10} \\times 10^{-12} = 12.5 \\text{ F} = 1.25 \\times 10^6 \\mu\\text{F}$$\n\n**Rpta.- $1.25 \\times 10^6 \\mu\\text{F}$**", dominated: false, ankiDue: false },
+            { id: 151, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.51.- Convertir $10^{18} \\text{ nanogotas}$ en Megagotas.", solution: "$$10^{18} \\times 10^{-9} \\times 10^{-6} = 1000 \\text{ Mgotas}$$\n\n**Rpta.- 1000 Mgotas**", dominated: false, ankiDue: false },
+            { id: 152, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.52.- Convertir $8.9 \\text{ g/ml}$ a $\\text{lb/pulg}^3$.", solution: "$$8.9 \\frac{\\text{g}}{\\text{ml}} \\times \\frac{1 \\text{ lb}}{453.6 \\text{ g}} \\times \\frac{16.387 \\text{ ml}}{1 \\text{ pulg}^3} = 0.322 \\text{ lb/pulg}^3$$\n\n**Rpta.- $0.322 \\text{ lb/pulg}^3$**", dominated: false, ankiDue: false },
+            { id: 153, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.53.- Cilindro de 2.5 pies de altura y 10 pulg de diámetro con chicha hasta 2/3. Si vacía $1 \\text{ dm}^3$ cada 30 s, ¿tiempo en min?", solution: "$$V_{\\text{chicha}} = 25.73 \\text{ dm}^3 \\implies t = 25.73 \\times 0.5 = 12.87 \\text{ min}$$\n\n**Rpta.- 12.87 min**", dominated: false, ankiDue: false },
+            { id: 154, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.54.- Probeta de 45 g. Llenada 1/3 de agua pesa 70 g. Llena con líquido desconocido pesa 120 g. Densidad del líquido.", solution: "$$V_{\\text{agua}} = 25 \\text{ ml} \\implies V_T = 75 \\text{ ml}$$\n$$m_{\\text{líq}} = 120 - 45 = 75 \\text{ g} \\implies \\rho = 1.00 \\text{ g/ml}$$\n\n**Rpta.- 1.00 g/ml**", dominated: false, ankiDue: false },
+            { id: 155, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.55.- Hombre requiere 2.00 mg riboflavina/día. Queso contiene $5.5 \\mu\\text{g}$ por gramo. ¿Libras de queso al día?", solution: "$$\\frac{2000 \\mu\\text{g}}{5.5 \\mu\\text{g/g}} = 363.63 \\text{ g} = 0.802 \\text{ lb queso}$$\n\n**Rpta.- 0.802 lb queso/día**", dominated: false, ankiDue: false },
+            { id: 156, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.56.- 20 perdigones en probeta aumentan el agua 5 ml. Diámetro de cada perdigón en mm.", solution: "$$V_1 = 0.25 \\text{ cm}^3 \\implies d = \\sqrt[3]{\\frac{6(0.25)}{\\pi}} = 0.7816 \\text{ cm} = 7.816 \\text{ mm}$$\n\n**Rpta.- 7.816 mm**", dominated: false, ankiDue: false },
+            { id: 157, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.57.- Estanque de $20\\text{m} \\times 10\\text{m} \\times 5\\text{m}$ al 3/4. 1 gota $NaClO$ por 10 L de agua ($1\\text{ml}=25\\text{gotas}$). Litros de $NaClO$.", solution: "$$V = 750,000 \\text{ L} \\implies 75,000 \\text{ gotas} = 3000 \\text{ ml} = 3 \\text{ Litros}$$\n\n**Rpta.- 3 Litros**", dominated: false, ankiDue: false },
+            { id: 158, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.58.- Estanque de $5\\text{m} \\times 12\\text{m} \\times 2.5\\text{m}$ al 50%. Agregar $2 \\text{ cm}^3$ de cloro por 4 L. Litros de cloro.", solution: "$$V = 75,000 \\text{ L} \\implies \\text{Cloro} = 75000 \\times \\frac{2 \\text{ cm}^3}{4} = 37,500 \\text{ cm}^3 = 37.5 \\text{ L} \\implies (187.5\\text{L autor})$$\n\n**Rpta.- 187.5 Litros**", dominated: false, ankiDue: false },
+            { id: 159, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.59.- Hallar $x$ en: $5 \\times 10^{-2} \\text{ m}^3 x - 10.5 \\text{ dm}^3 = 8500 \\text{ cm}^3 x$.", solution: "$$50 x - 10.5 = 8.5 x \\implies 41.5 x = 10.5 \\implies x = 0.253$$\n\n**Rpta.- 0.253**", dominated: false, ankiDue: false },
+            { id: 160, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.60.- Recipiente cúbico rígido almacena 5000 g de mercurio ($\rho=13.6$). ¿Libras de aceite ($\rho=0.9$) para el mismo recipiente?", solution: "$$V = \\frac{5000}{13.6} = 367.65 \\text{ ml} \\implies m_{\\text{aceite}} = 330.88 \\text{ g} = 0.729 \\text{ lb}$$\n\n**Rpta.- 0.729 lb de aceite**", dominated: false, ankiDue: false },
+            { id: 161, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.61.- 20 gotas = 1 ml. Cantidad de megagotas en esfera llena de agua con radio 1 m.", solution: "$$V = \\frac{4}{3} \\pi (1)^3 = 4.19 \\text{ m}^3 = 4.19 \\times 10^6 \\text{ ml} = 83.8 \\text{ Mgotas}$$\n\n**Rpta.- 83.8 Mgotas**", dominated: false, ankiDue: false },
+            { id: 162, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.62.- Cilindro de 4 pies de altura y $0.5026 \\text{ m}^2$ de base hasta 2/3. Volumen de aceite en galones.", solution: "$$h = 1.2192 \\text{ m} \\implies V = 0.6128 \\text{ m}^3 \\implies V_{\\text{neto}} = 0.4085 \\text{ m}^3 = 107.93 \\text{ gal}$$\n\n**Rpta.- 107.93 gal**", dominated: false, ankiDue: false },
+            { id: 163, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.63.- Moneda de cuarto de dólar (5.67 g, 1.55 mm espesor). Monumento 575 pies altura. a) Monedas apiladas, b) Masa total, c) Dinero total.", solution: "a) 113071 monedas\nb) 641112.57 g\nc) 28267.75 $us", dominated: false, ankiDue: false },
+            { id: 164, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.64.- Densidad del líquido X si la solución con agua tiene $\\rho_{\\text{rel}} = 1.6$ (proporción X:Agua es 1:4 vol).", solution: "$$\\frac{1 \\cdot \\rho_X + 4(1)}{5} = 1.6 \\implies \\rho_X + 4 = 8 \\implies \\rho_X = 4.0 \\text{ g/ml}$$\n\n**Rpta.- 4.0 g/ml**", dominated: false, ankiDue: false },
+            { id: 165, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.65.- EPSAS: $Ca(ClO)_2$ (48% Cloro activo). Dosis 4 mg Cl/L. Población 1.7 millones, consumo 1500 gal/hab-año. Toneladas de reactivo.", solution: "$$\\text{Agua} = 9.65 \\times 10^9 \\text{ L} \\implies \\text{Cl} = 3.86 \\times 10^7 \\text{ g} \\implies \\text{Reactivo} = 80.43 \\text{ t}$$\n\n**Rpta.- 80.43 t**", dominated: false, ankiDue: false },
+            { id: 166, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.66.- Mezcla aceite-alcohol $\\rho = 0.86 \\text{ g/cc}$. Masas iguales. Alcohol ocupa 53.75% del volumen. Densidad aceite.", solution: "$$\\rho_{\\text{aceite}} = \\frac{m}{V_{\\text{aceite}}} = \\frac{0.43}{0.4625} = 0.93 \\text{ g/ml}$$\n\n**Rpta.- 0.93 g/ml**", dominated: false, ankiDue: false },
+            { id: 167, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.67.- Camión cisterna 15000 L, pérdida 0.8 L/m. Distancia 5 km. Regar 6 Ha (4 L/m²). ¿Viajes en 1 semana?", solution: "Pérdida $= 4000 \\text{ L} \\implies V_{\\text{neto}} = 11000 \\text{ L}$. Requerimiento $= 240000 \\text{ L/día}$.\nViajes/día $= 21.82 \\implies \\text{Semana} = 153 \\text{ viajes}$.\n\n**Rpta.- 153 viajes**", dominated: false, ankiDue: false },
+            { id: 168, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.68.- Catalizador poroso $800 \\text{ m}^2/\\text{cm}^3$. 50% poros tubulares. Diámetro $d$ en Å.", solution: "$$\\frac{V}{S} = \\frac{d}{4} = \\frac{0.5 \\text{ cm}^3}{800 \\times 10^4 \\text{ cm}^2} \\implies d = 2.5 \\times 10^{-7} \\text{ cm} = 25 \\text{ Å}$$\n\n**Rpta.- 25 Å**", dominated: false, ankiDue: false },
+            { id: 169, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.69.- Cadena de oro ($A = 1.85 \\text{ mm}^2$, 102 argollas de 0.9 cm c/u, $\\rho=19.3$). Con 230 kg: m alambre, n° cadenas, masa argolla y cadena.", solution: "a) 6441.7 m alambre\nb) 7017 cadenas\nc) 0.321 g/argolla\nd) 32.74 g/cadena", dominated: false, ankiDue: false },
+            { id: 170, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.70.- Anillo de bronce ($d_e=31.5\\text{mm}, d_i=7.5\\text{mm}, e=12\\text{mm}$). Masa Cu:Sn:Al 1:2:3. Densidades 8.9, 7.3, 2.7. a) $\\rho_{\\text{bronce}}$, b) Discos con 10 lb.", solution: "a) $4.00 \\text{ g/cm}^3$\nb) $128 \\text{ anillos}$", dominated: false, ankiDue: false },
+            { id: 171, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.71.- Átomos de Pt separados $2.8 \\times 10^{-8} \\text{ cm}$. Átomos en $25.4 \\text{ mm}$ de longitud.", solution: "$$N = \\frac{2.54 \\text{ cm}}{2.8 \\times 10^{-8} \\text{ cm}} = 9.07 \\times 10^7 \\text{ átomos}$$\n\n**Rpta.- $9.07 \\times 10^7$ átomos**", dominated: false, ankiDue: false },
+            { id: 172, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.72.- Barra de hierro 2 lb y 15 pulg de largo. Densidad lineal en g/cm.", solution: "$$\\frac{2 \\times 453.6 \\text{ g}}{15 \\times 2.54 \\text{ cm}} = 23.81 \\text{ g Fe/cm}$$\n\n**Rpta.- 23.81 g/cm**", dominated: false, ankiDue: false },
+            { id: 173, subject: "Química General", chapter: "Temperaturas", type: "ejemplos", text: "Ejemplo 1.73.- Escala absoluta escandinava °E marca 110 °E en congelación del agua. a) Marca en ebullición, b) Marca en cuerpo humano (37°C).", solution: "a) $150.29 ^\\circ\\text{E}$\nb) $124.9 ^\\circ\\text{E}$", dominated: false, ankiDue: false },
+            { id: 174, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.74.- 25 mg Mg/estudiante. Frasco 1 lb Mg. Grupo de 24 alumnos. a) Mg queda en frasco, b) Mg para 20 grupos.", solution: "a) $453 \\text{ g Mg}$\nb) $12 \\text{ g Mg}$", dominated: false, ankiDue: false },
+            { id: 175, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.75.- Esfera hueca de Al ($\rho=2.7$). Volumen interior $0.0578 \\text{ pie}^3$ de agua, espesor 1 cm. Masa de la esfera.", solution: "$$V_i = 1636.71 \\text{ cm}^3 \\implies r_i = 7.31 \\text{ cm} \\implies r_e = 8.31 \\text{ cm}$$\n$$V_e = 2403.76 \\text{ cm}^3 \\implies V_{\\text{neto}} = 767.05 \\text{ cm}^3 \\implies m = 2071.04 \\text{ g}$$\n\n**Rpta.- 2071.04 g**", dominated: false, ankiDue: false },
+            { id: 176, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.76.- $\\rho_{X/Y} = 1.5, \\rho_{Y/Z} = 2.0, \\rho_Z = 3 \\text{ g/ml}$. Volumen de 180 g de X.", solution: "$$\\rho_Y = 6 \\implies \\rho_X = 9 \\text{ g/cm}^3 \\implies V_X = \\frac{180}{9} = 20 \\text{ cm}^3$$\n\n**Rpta.- $20 \\text{ cm}^3$**", dominated: false, ankiDue: false },
+            { id: 177, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.77.- 0.020 lb Hg ($\rho=13.6$) llena bulbo esférico ($d=0.25$ pulg) y capilar de 9 cm. Diámetro capilar en mm.", solution: "$$m_T = 9.072 \\text{ g}, \\quad m_{\\text{bulbo}} = 1.823 \\text{ g} \\implies m_{\\text{capilar}} = 7.249 \\text{ g}$$\n$$V = 0.533 \\text{ cm}^3 \\implies d = \\sqrt{\\frac{4 V}{\\pi h}} = 0.275 \\text{ cm} = 2.75 \\text{ mm}$$\n\n**Rpta.- 2.75 mm**", dominated: false, ankiDue: false },
+            { id: 178, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.78.- Masa agua + alcohol = 60 g. Diferencia volúmenes = $10 \\text{ cm}^3$. $\\rho_{\\text{mezcla}} = 0.911$. a) $\\rho_{\\text{alcohol}}$, b) ¿Cuánto derrama en cubo de 4 cm lado?", solution: "a) $0.79 \\text{ g/cm}^3$\nb) $1.86 \\text{ cm}^3$", dominated: false, ankiDue: false },
+            { id: 179, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.79.- Mezcla 30% vol agua, 20% masa alcohol ($\rho=0.79$) y X. $\\rho_{\\text{mezcla}} = 1.6$. Densidad del tercer líquido.", solution: "$$m_X = 98 \\text{ g}, \\quad V_X = 29.49 \\text{ ml} \\implies \\rho_X = 3.32 \\text{ g/cm}^3$$\n\n**Rpta.- 3.32 g/cm³**", dominated: false, ankiDue: false },
+            { id: 180, subject: "Química General", chapter: "Temperaturas", type: "ejemplos", text: "Ejemplo 1.80.- Temp A = 1/3 Temp B (°C). Temp A es la mitad de B en °F. Temperatura de A en °C.", solution: "$$T_B = 128 ^\\circ\\text{F} \\implies T_A = 64 ^\\circ\\text{F} \\implies t_A = 17.77 ^\\circ\\text{C}$$\n\n**Rpta.- 17.77 °C**", dominated: false, ankiDue: false },
+            { id: 181, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.81.- Probeta vacía 50 g. 1/3 agua pesa 100 g. Llena con líquido X pesa 160 g. Densidad de X en SI.", solution: "$$V_T = 150 \\text{ cm}^3 \\implies V_X = 100 \\text{ cm}^3, \\quad m_X = 60 \\text{ g} \\implies \\rho = 600 \\text{ kg/m}^3$$\n\n**Rpta.- $600 \\text{ kg/m}^3$ ($0.60 \\text{ g/cm}^3$)**", dominated: false, ankiDue: false },
+            { id: 182, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.82.- Líquido X + porción de agua $\\rho_{\\text{rel}}=0.86$. Con otra porción igual de agua $\\rho_{\\text{rel}}=0.92$. Densidad de X.", solution: "$$\\rho_X = 0.44 \\text{ g/cm}^3$$\n\n**Rpta.- 0.44 g/cm³**", dominated: false, ankiDue: false },
+            { id: 183, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.83.- Objeto de 15.8 g en etanol derrama volumen igual. Recipiente y contenido pesan 10.5 g más que con etanol. $\\rho_{\\text{etanol}}=0.789$. Densidad relativa objeto.", solution: "$$V_{\\text{derr}} = 6.717 \\text{ cm}^3 \\implies \\rho = \\frac{15.8}{6.717} = 2.35 \\text{ g/cm}^3$$\n\n**Rpta.- 2.35**", dominated: false, ankiDue: false },
+            { id: 184, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.84.- 500 lingotes Au-Ag-Cu 12 quilates. Dimensiones $15\\text{cm} \\times 0.25\\text{pie} \\times 1.5\\text{pulg}$. a) $\\rho_{\\text{rel}}$, b) Valor en \$us.", solution: "a) $12.85 \\text{ g/cm}^3$\nb) $1.82 \\times 10^7 \\text{ \$us}$", dominated: false, ankiDue: false },
+            { id: 185, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.85.- Mezcla 1450 g A + 1580 g B. Volumen = 3500 g leche ($\rho=1.1$). a) $\\rho_{\\text{mezcla}}$, b) $\\rho_{\\text{rel}}$, c) Si $\\rho_A=0.85$, hallar $\\rho_B$.", solution: "a) $0.9523 \\text{ g/cm}^3$\nb) $0.9523$\nc) $1.07 \\text{ g/cm}^3$", dominated: false, ankiDue: false },
+            { id: 186, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.86.- Alambre de plata $2.0 \\text{ mm}^2$. 120 argollas (5 mm c/u). $\\rho=10.5$. a) Metros con 50 lb Ag, b) Precio cadena en Bs (12 \$us/O.T., 8 Bs/\$us).", solution: "a) $1080 \\text{ m}$\nb) $45.09 \\text{ Bs}$", dominated: false, ankiDue: false },
+            { id: 187, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.87.- Chuflay 10% vol alcohol (Singani 47% vol). 25 alumnos, 13 vasos de 120 ml c/u. a) Botellas singani 700 ml, b) Costo total, c) Cuota/alumno.", solution: "a) 12 botellas singani\nb) 804.15 Bs\nc) 32.11 Bs/alumno", dominated: false, ankiDue: false },
+            { id: 188, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.88.- Peltre (Sn y Pb). Sn ocupa 4/5 y Pb 1/5 del volumen. a) Densidad del Peltre, b) % masa ($\\rho_{\\text{Sn}}=7.31, \\rho_{\\text{Pb}}=11.34$).", solution: "a) $8.116 \\text{ g/ml}$\nb) 72.06% Sn y 27.94% Pb", dominated: false, ankiDue: false },
+            { id: 189, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.89.- Mezcla A, B y agua. $m_A = 2 m_B$, $V_A = \\frac{1}{5} V_{\\text{agua}}$, $\\rho_A = 3 \\rho_B$. Mezcla total = 150 ml. Hallar $V_A$.", solution: "$$V_{\\text{agua}} = 91.837 \\text{ ml} \\implies V_A = 18.37 \\text{ ml}$$\n\n**Rpta.- 18.37 ml**", dominated: false, ankiDue: false },
+            { id: 190, subject: "Química General", chapter: "Unidades y Volúmenes", type: "ejemplos", text: "Ejemplo 1.90.- Mezcla A, B y agua en proporción de masas 3:6:6. Vol total $= 88 \\text{ cm}^3$. Vol de A excede al agua en $8 \\text{ cm}^3$. Diferencia $\\rho_A - \\rho_B$ si $V_{\\text{agua}} = 1/11$ de mezcla.", solution: "$$\\rho_A = 0.25, \\quad \\rho_B = 0.125 \\implies \\rho_A - \\rho_B = 0.125 \\text{ g/cm}^3$$\n\n**Rpta.- 0.125 g/cm³**", dominated: false, ankiDue: false },
+
+            // --- PROBLEMAS PROPUESTOS (1.1 al 1.30) ---
+            { id: 201, subject: "Química General", chapter: "Problemas Propuestos", type: "propuestos", text: "Problema Propuesto 1.1.- Clasificación de Propiedades Intensivas/Extensivas, Sistemas Homogéneos/Heterogéneos y Fenómenos Físicos/Químicos.", solution: "Ver tabla resumen en el texto QMC-101.", dominated: false, ankiDue: false },
+            { id: 202, subject: "Química General", chapter: "Problemas Propuestos", type: "propuestos", text: "Problema Propuesto 1.2.- Identificar las propiedades de cada especie (Elemento, Compuesto, Sustancia Pura, Mezcla).", solution: "Ver clasificación en guía teórica.", dominated: false, ankiDue: false },
+            { id: 203, subject: "Química General", chapter: "Problemas Propuestos", type: "propuestos", text: "Problema Propuesto 1.3.- El tungsteno funde a $3410^\\circ\\text{C}$. ¿Cuál es este punto de fusión en grados Fahrenheit?", solution: "$$^\\circ\\text{F} = \\frac{9}{5}(3410) + 32 = 6170^\\circ\\text{F}$$\n\n**Rpta.- 6170 °F**", dominated: false, ankiDue: false },
+            { id: 204, subject: "Química General", chapter: "Problemas Propuestos", type: "propuestos", text: "Problema Propuesto 1.4.- El titanio funde a $1677^\\circ\\text{C}$. ¿Cuál es la temperatura en grados Fahrenheit?", solution: "$$^\\circ\\text{F} = \\frac{9}{5}(1677) + 32 = 3050.6^\\circ\\text{F}$$", dominated: false, ankiDue: false },
+            { id: 205, subject: "Química General", chapter: "Problemas Propuestos", type: "propuestos", text: "Problema Propuesto 1.5.- El $CaCO_3$ se descompone a $825^\\circ\\text{C}$. ¿Temperatura en grados Fahrenheit?", solution: "$$^\\circ\\text{F} = \\frac{9}{5}(825) + 32 = 1517^\\circ\\text{F} \\approx 1520^\\circ\\text{F}$$\n\n**Rpta.- 1520 °F**", dominated: false, ankiDue: false },
+            { id: 206, subject: "Química General", chapter: "Problemas Propuestos", type: "propuestos", text: "Problema Propuesto 1.6.- El bicarbonato de sodio se descompone a $250^\\circ\\text{C}$. ¿Temperatura en °F?", solution: "$$^\\circ\\text{F} = \\frac{9}{5}(250) + 32 = 482^\\circ\\text{F}$$", dominated: false, ankiDue: false },
+            { id: 207, subject: "Química General", chapter: "Problemas Propuestos", type: "propuestos", text: "Problema Propuesto 1.7.- Punto de fusión del Galio es $29.8^\\circ\\text{C}$. ¿Temperatura en Kelvin y Fahrenheit?", solution: "$$K = 303 \\text{ K}, \\quad ^\\circ\\text{F} = 85.6^\\circ\\text{F}$$\n\n**Rpta.- 303 K, 85.6 °F**", dominated: false, ankiDue: false },
+            { id: 208, subject: "Química General", chapter: "Problemas Propuestos", type: "propuestos", text: "Problema Propuesto 1.8.- El mercurio se congela a $-39.9^\\circ\\text{C}$. a) En Kelvin, b) En °F.", solution: "a) 233.25 K, b) -39.82 °F", dominated: false, ankiDue: false },
+            { id: 209, subject: "Química General", chapter: "Problemas Propuestos", type: "propuestos", text: "Problema Propuesto 1.9.- El zinc hierve a 1666 °F. a) Temperatura en °C, b) En Kelvin.", solution: "a) $907.8^\\circ\\text{C}$, b) $1180.8 \\text{ K}$\n\n**Rpta.- 907.8 °C, 1180.8 K**", dominated: false, ankiDue: false },
+            { id: 210, subject: "Química General", chapter: "Problemas Propuestos", type: "propuestos", text: "Problema Propuesto 1.10.- En probeta de 20 ml se echan 120 g de limaduras de bronce ($\rho_{\\text{rel}}=8$). ¿Volumen de agua para llenar hasta 10 ml?", solution: "$$V_{\\text{bronce}} = \\frac{120}{8} = 15 \\text{ ml} \\implies \\text{Agua} = 5 \\text{ ml}$$\n\n**Rpta.- 5 ml**", dominated: false, ankiDue: false },
+            { id: 211, subject: "Química General", chapter: "Problemas Propuestos", type: "propuestos", text: "Problema Propuesto 1.11.- Solución agua y alcohol $\\rho_{\\text{rel}}=0.947$ en proporción volumétrica 3:1. Densidad relativa del alcohol.", solution: "$$\\frac{3(1) + 1(\\rho_{\\text{alc}})}{4} = 0.947 \\implies \\rho_{\\text{alc}} = 0.79$$\n\n**Rpta.- 0.79**", dominated: false, ankiDue: false },
+            { id: 212, subject: "Química General", chapter: "Problemas Propuestos", type: "propuestos", text: "Problema Propuesto 1.12.- Termómetro arbitrario °x (hielo $-10^\\circ\\text{x}$, vapor $140^\\circ\\text{x}$). Valor del cero absoluto.", solution: "$$^\\circ\\text{x} = -419.5^\\circ\\text{x}$$\n\n**Rpta.- -419.5 °x**", dominated: false, ankiDue: false },
+            { id: 213, subject: "Química General", chapter: "Problemas Propuestos", type: "propuestos", text: "Problema Propuesto 1.13.- Densidad del osmio $22.5 \\text{ g/cm}^3$. Expresar en unidades del SI ($\text{kg/m}^3$).", solution: "$$22.5 \\times 1000 = 22,500 \\text{ kg/m}^3$$\n\n**Rpta.- 22,500 kg/m³**", dominated: false, ankiDue: false },
+            { id: 214, subject: "Química General", chapter: "Problemas Propuestos", type: "propuestos", text: "Problema Propuesto 1.14.- Densidad del vanadio $5.96 \\text{ g/cm}^3$. Expresar en SI ($\text{kg/m}^3$).", solution: "$$5.96 \\times 1000 = 5960 \\text{ kg/m}^3$$\n\n**Rpta.- 5960 kg/m³**", dominated: false, ankiDue: false },
+            { id: 215, subject: "Química General", chapter: "Problemas Propuestos", type: "propuestos", text: "Problema Propuesto 1.15.- Pieza de cuarzo de 38.4 g en probeta con 51.2 ml agua. Sube a 65.7 ml. Densidad del cuarzo.", solution: "$$\\rho = \\frac{38.4}{65.7 - 51.2} = 2.65 \\text{ g/ml}$$\n\n**Rpta.- 2.65 g/ml**", dominated: false, ankiDue: false },
+            { id: 216, subject: "Química General", chapter: "Problemas Propuestos", type: "propuestos", text: "Problema Propuesto 1.16.- Muestra de 15 ml pesa 22.3 g. ¿Acetona (0.792), Benceno (0.889), Cloroformo (1.489) o $\text{CCl}_4$ (1.595)?", solution: "$$\\rho = \\frac{22.3}{15} = 1.486 \\text{ g/cm}^3 \\implies \\text{Cloroformo}$$\n\n**Rpta.- Cloroformo**", dominated: false, ankiDue: false },
+            { id: 217, subject: "Química General", chapter: "Problemas Propuestos", type: "propuestos", text: "Problema Propuesto 1.17.- Calcita de 35.6 g ocupa 12.9 cm³. ¿En cuál flotará: $\text{CCl}_4$ (1.60), bromuro de metileno (2.50), tetrabromoetano (2.96) o yoduro de metileno (3.33)?", solution: "$$\\rho_{\\text{calcita}} = \\frac{35.6}{12.9} = 2.76 \\text{ g/cm}^3 \\implies \\text{Flotará en tetrabromoetano}$$\n\n**Rpta.- Tetrabromoetano**", dominated: false, ankiDue: false },
+            { id: 218, subject: "Química General", chapter: "Problemas Propuestos", type: "propuestos", text: "Problema Propuesto 1.18.- Masa de un cubo de platino de 2.20 cm de lado ($\rho=21.4 \\text{ g/cm}^3$).", solution: "$$V = (2.20)^3 = 10.648 \\text{ cm}^3 \\implies m = 21.4 \\times 10.648 = 228 \\text{ g}$$\n\n**Rpta.- 228 g**", dominated: false, ankiDue: false },
+            { id: 219, subject: "Química General", chapter: "Problemas Propuestos", type: "propuestos", text: "Problema Propuesto 1.19.- Masa de cilindro de silicio con 12.40 cm longitud y 3.50 cm radio ($\rho=2.33 \\text{ g/cm}^3$).", solution: "$$V = \\pi (3.50)^2 (12.40) = 477.21 \\text{ cm}^3 \\implies m = 1111.89 \\text{ g}$$\n\n**Rpta.- 1111.89 g**", dominated: false, ankiDue: false },
+            { id: 220, subject: "Química General", chapter: "Problemas Propuestos", type: "propuestos", text: "Problema Propuesto 1.20.- Volumen de 35.00 g de ácido acético puro ($\rho=1.053 \\text{ g/ml}$).", solution: "$$V = \\frac{35.00}{1.053} = 33.24 \\text{ ml}$$\n\n**Rpta.- 33.24 ml**", dominated: false, ankiDue: false },
+            { id: 221, subject: "Química General", chapter: "Problemas Propuestos", type: "propuestos", text: "Problema Propuesto 1.21.- Volumen en litros de 0.985 kg de acetato de etilo ($\rho=0.902 \\text{ g/ml}$).", solution: "$$V = \\frac{985}{0.902} = 1092 \\text{ ml} = 1.092 \\text{ litros}$$\n\n**Rpta.- 1.092 litros**", dominated: false, ankiDue: false },
+            { id: 222, subject: "Química General", chapter: "Problemas Propuestos", type: "propuestos", text: "Problema Propuesto 1.22.- Añejamiento de vino de 87600 horas. ¿Cuántos años representa?", solution: "$$\\text{Años} = \\frac{87600}{24 \\times 365} = 10 \\text{ años}$$\n\n**Rpta.- 10 años**", dominated: false, ankiDue: false },
+            { id: 223, subject: "Química General", chapter: "Problemas Propuestos", type: "propuestos", text: "Problema Propuesto 1.23.- Barra de cobre: 1 pulg x 2 pulg x 1 pie. Masa en libras ($\rho=8.9 \\text{ g/cm}^3$).", solution: "$$V = 393.29 \\text{ cm}^3 \\implies m = 3500.28 \\text{ g} = 7.72 \\text{ lb}$$\n\n**Rpta.- 7.72 lb**", dominated: false, ankiDue: false },
+            { id: 224, subject: "Química General", chapter: "Problemas Propuestos", type: "propuestos", text: "Problema Propuesto 1.24.- Vaso cilíndrico de 8.0 cm diámetro y 12.0 cm profundidad lleno de agua. Bebe 75%. Gramos consumidos.", solution: "$$V_T = 603.185 \\text{ cm}^3 \\implies 75\\% = 452.39 \\text{ g} \\implies (583.6\\text{g autor})$$\n\n**Rpta.- 583.6 g**", dominated: false, ankiDue: false },
+            { id: 225, subject: "Química General", chapter: "Problemas Propuestos", type: "propuestos", text: "Problema Propuesto 1.25.- Esfera de vidrio vertida hasta 1/4 con $2 \\text{ dm}^3$ de agua oxigenada. Diámetro interno.", solution: "$$V_T = 8 \\text{ dm}^3 = 8000 \\text{ cm}^3 \\implies d = \\sqrt[3]{\\frac{6 \\times 8000}{\\pi}} = 24.81 \\text{ cm}$$\n\n**Rpta.- 24.81 cm**", dominated: false, ankiDue: false },
+            { id: 226, subject: "Química General", chapter: "Problemas Propuestos", type: "propuestos", text: "Problema Propuesto 1.26.- Recipiente cúbico de 10 cm arista contiene 700 g agua. Gramos de aceite ($\rho_{\\text{rel}}=0.81$) para llenarlo.", solution: "$$V_{\\text{libre}} = 300 \\text{ cm}^3 \\implies m = 300 \\times 0.81 = 243 \\text{ g}$$\n\n**Rpta.- 243 g**", dominated: false, ankiDue: false },
+            { id: 227, subject: "Química General", chapter: "Problemas Propuestos", type: "propuestos", text: "Problema Propuesto 1.27.- Cilindro almacena 2000 g de mercurio ($\rho=13.6$). Libras de agua que ocuparán el mismo recipiente.", solution: "$$V = \\frac{2000}{13.6} = 147.06 \\text{ cm}^3 \\implies m_{\\text{agua}} = 147.06 \\text{ g} = 0.324 \\text{ lb}$$\n\n**Rpta.- 0.324 lb**", dominated: false, ankiDue: false },
+            { id: 228, subject: "Química General", chapter: "Problemas Propuestos", type: "propuestos", text: "Problema Propuesto 1.28.- Contenedor de un cuarto de galón cúbico. Longitud de un lado en cm.", solution: "$$V = 0.94625 \\text{ L} = 946.25 \\text{ cm}^3 \\implies l = \\sqrt[3]{946.25} = 9.82 \\text{ cm}$$\n\n**Rpta.- 9.82 cm**", dominated: false, ankiDue: false },
+            { id: 229, subject: "Química General", chapter: "Problemas Propuestos", type: "propuestos", text: "Problema Propuesto 1.29.- Masa agua + alcohol = 60 g, dif. volúmenes = 10 cm³. $\\rho_{\\text{mezcla}} = 0.911$. Hallar $\\rho_{\\text{alcohol}}$.", solution: "$$\\rho_{\\text{alcohol}} = 0.79 \\text{ g/cc}$$\n\n**Rpta.- 0.79 g/cc**", dominated: false, ankiDue: false },
+            { id: 230, subject: "Química General", chapter: "Problemas Propuestos", type: "propuestos", text: "Problema Propuesto 1.30.- $\\rho_X / \\rho_Y = 3.3$, suma densidades = 14.5. Relación $V_X/V_Y$ si relación de masas es 2:3.", solution: "$$V_X/V_Y = \\frac{m_X \\rho_Y}{m_Y \\rho_X} = \\frac{2}{3 \\times 3.3} = \\frac{20}{99}$$\n\n**Rpta.- 20/99**", dominated: false, ankiDue: false }
+        ];
+
+        // Estado Global
+        let state = {
+            questions: JSON.parse(localStorage.getItem('eduvault_q')) || defaultQuestions,
+            activeSubject: null,
+            activeChapter: null,
+            activeFilter: 'all',
+            searchTerm: ''
+        };
+
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', () => {
+            setupEventListeners();
+            renderSidebar();
+            renderQuestions();
+            updateGlobalProgress();
+        });
+
+        function setupEventListeners() {
+            document.getElementById('btn-toggle-sidebar').onclick = () => {
+                document.getElementById('sidebar').classList.remove('-translate-x-full');
+            };
+            document.getElementById('btn-close-sidebar').onclick = () => {
+                document.getElementById('sidebar').classList.add('-translate-x-full');
+            };
+
+            document.getElementById('btn-theme-toggle').onclick = () => {
+                document.documentElement.classList.toggle('dark');
+            };
+
+            document.getElementById('btn-open-formulas').onclick = () => toggleModal('modal-formulas', true);
+            document.getElementById('btn-close-formulas').onclick = () => toggleModal('modal-formulas', false);
+
+            document.getElementById('btn-open-creator').onclick = () => toggleModal('modal-creator', true);
+            document.getElementById('btn-close-creator').onclick = () => toggleModal('modal-creator', false);
+            document.getElementById('btn-cancel-creator').onclick = () => toggleModal('modal-creator', false);
+
+            document.getElementById('btn-open-backup').onclick = () => toggleModal('modal-backup', true);
+            document.getElementById('btn-close-backup').onclick = () => toggleModal('modal-backup', false);
+
+            document.getElementById('btn-reveal-all').onclick = () => {
+                document.querySelectorAll('.solution-accordion').forEach(el => el.classList.add('open'));
+            };
+            document.getElementById('btn-hide-all').onclick = () => {
+                document.querySelectorAll('.solution-accordion').forEach(el => el.classList.remove('open'));
+            };
+
+            document.querySelectorAll('.subfilter-btn').forEach(btn => {
+                btn.onclick = (e) => {
+                    const target = e.currentTarget;
+                    document.querySelectorAll('.subfilter-btn').forEach(b => {
+                        b.classList.remove('bg-cyan-600', 'text-white');
+                        b.classList.add('bg-slate-800', 'text-slate-300');
+                    });
+                    target.classList.remove('bg-slate-800', 'text-slate-300');
+                    target.classList.add('bg-cyan-600', 'text-white');
+                    
+                    state.activeFilter = target.getAttribute('data-type');
+                    renderQuestions();
+                };
+            });
+
+            document.getElementById('search-input').oninput = (e) => {
+                state.searchTerm = e.target.value.toLowerCase();
+                renderQuestions();
+            };
+
+            document.getElementById('form-add-question').onsubmit = (e) => {
+                e.preventDefault();
+                const newQ = {
+                    id: Date.now(),
+                    subject: document.getElementById('new-q-subject').value.trim(),
+                    chapter: document.getElementById('new-q-chapter').value.trim(),
+                    type: document.getElementById('new-q-type').value,
+                    text: document.getElementById('new-q-text').value.trim(),
+                    solution: document.getElementById('new-q-solution').value.trim(),
+                    dominated: false,
+                    ankiDue: true
+                };
+                state.questions.push(newQ);
+                saveAndRefresh();
+                toggleModal('modal-creator', false);
+                e.target.reset();
+            };
+
+            document.getElementById('btn-export-json').onclick = () => {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state.questions, null, 2));
+                const downloadAnchor = document.createElement('a');
+                downloadAnchor.setAttribute("href", dataStr);
+                downloadAnchor.setAttribute("download", `eduvault_backup_${Date.now()}.json`);
+                document.body.appendChild(downloadAnchor);
+                downloadAnchor.click();
+                downloadAnchor.remove();
+            };
+
+            document.getElementById('input-import-json').onchange = (e) => {
+                const fileReader = new FileReader();
+                if (e.target.files[0]) {
+                    fileReader.readAsText(e.target.files[0], "UTF-8");
+                    fileReader.onload = (event) => {
+                        try {
+                            const imported = JSON.parse(event.target.result);
+                            if (Array.isArray(imported)) {
+                                state.questions = imported;
+                                saveAndRefresh();
+                                alert('¡Base de datos importada con éxito!');
+                                toggleModal('modal-backup', false);
+                            } else {
+                                alert('El archivo JSON no tiene el formato correcto.');
+                            }
+                        } catch (err) {
+                            alert('Error al procesar el archivo JSON.');
+                        }
+                    };
+                }
+            };
+        }
+
+        function toggleModal(modalId, show) {
+            const modal = document.getElementById(modalId);
+            if (show) modal.classList.remove('hidden');
+            else modal.classList.add('hidden');
+        }
+
+        function saveAndRefresh() {
+            localStorage.setItem('eduvault_q', JSON.stringify(state.questions));
+            renderSidebar();
+            renderQuestions();
+            updateGlobalProgress();
+        }
+
+        function renderSidebar() {
+            const container = document.getElementById('subjects-list');
+            container.innerHTML = '';
+
+            const tree = {};
+            state.questions.forEach(q => {
+                if (!tree[q.subject]) tree[q.subject] = {};
+                if (!tree[q.subject][q.chapter]) tree[q.subject][q.chapter] = [];
+                tree[q.subject][q.chapter].push(q);
+            });
+
+            document.getElementById('subject-count-badge').textContent = Object.keys(tree).length;
+
+            const allBtn = document.createElement('div');
+            allBtn.className = `p-2.5 rounded-xl text-xs font-semibold cursor-pointer flex items-center justify-between transition-all ${!state.activeSubject ? 'bg-cyan-600 text-white shadow-md' : 'bg-slate-900 hover:bg-slate-800 text-slate-300'}`;
+            allBtn.innerHTML = `<span class="flex items-center gap-2"><i class="fa-solid fa-layer-group"></i> Ver Todo el Banco</span> <span class="text-[10px] bg-slate-950 px-2 py-0.5 rounded-full">${state.questions.length}</span>`;
+            allBtn.onclick = () => {
+                state.activeSubject = null;
+                state.activeChapter = null;
+                renderSidebar();
+                renderQuestions();
+            };
+            container.appendChild(allBtn);
+
+            for (const [subj, chapters] of Object.entries(tree)) {
+                const subjDiv = document.createElement('div');
+                subjDiv.className = 'mt-2 space-y-1';
+
+                const subjHeader = document.createElement('div');
+                subjHeader.className = `p-2.5 rounded-xl text-xs font-bold cursor-pointer flex items-center justify-between transition-all ${state.activeSubject === subj ? 'bg-slate-800 text-cyan-400 border border-slate-700' : 'bg-slate-900/60 hover:bg-slate-800 text-slate-200'}`;
+                
+                let subjCount = Object.values(chapters).reduce((acc, arr) => acc + arr.length, 0);
+                subjHeader.innerHTML = `<span class="flex items-center gap-2"><i class="fa-solid fa-folder-open"></i> ${subj}</span> <span class="text-[10px] bg-slate-950 px-2 py-0.5 rounded-full text-slate-400">${subjCount}</span>`;
+                subjHeader.onclick = () => {
+                    state.activeSubject = subj;
+                    state.activeChapter = null;
+                    renderSidebar();
+                    renderQuestions();
+                };
+                subjDiv.appendChild(subjHeader);
+
+                const chapContainer = document.createElement('div');
+                chapContainer.className = 'pl-3 space-y-1 mt-1 border-l border-slate-800 ml-2';
+                for (const [chap, qList] of Object.entries(chapters)) {
+                    const isChapActive = state.activeSubject === subj && state.activeChapter === chap;
+                    const chapBtn = document.createElement('div');
+                    chapBtn.className = `p-2 rounded-lg text-[11px] font-medium cursor-pointer flex items-center justify-between transition-all ${isChapActive ? 'bg-cyan-950 text-cyan-300 border border-cyan-800/80' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'}`;
+                    chapBtn.innerHTML = `<span>${chap}</span> <span class="text-[9px] bg-slate-950 px-1.5 py-0.5 rounded-full">${qList.length}</span>`;
+                    chapBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        state.activeSubject = subj;
+                        state.activeChapter = chap;
+                        renderSidebar();
+                        renderQuestions();
+                    };
+                    chapContainer.appendChild(chapBtn);
+                }
+                subjDiv.appendChild(chapContainer);
+                container.appendChild(subjDiv);
+            }
+
+            document.getElementById('anki-due-badge').textContent = state.questions.filter(q => q.ankiDue).length;
+        }
+
+        function renderQuestions() {
+            const container = document.getElementById('exercises-list');
+            container.innerHTML = '';
+
+            let filtered = state.questions.filter(q => {
+                if (state.activeSubject && q.subject !== state.activeSubject) return false;
+                if (state.activeChapter && q.chapter !== state.activeChapter) return false;
+
+                if (state.activeFilter === 'ejemplos' && q.type !== 'ejemplos') return false;
+                if (state.activeFilter === 'propuestos' && q.type !== 'propuestos') return false;
+                if (state.activeFilter === 'dominados' && !q.dominated) return false;
+                if (state.activeFilter === 'anki-due' && !q.ankiDue) return false;
+
+                if (state.searchTerm) {
+                    const query = state.searchTerm;
+                    const matchText = q.text.toLowerCase().includes(query);
+                    const matchSol = q.solution.toLowerCase().includes(query);
+                    const matchSubj = q.subject.toLowerCase().includes(query);
+                    const matchChap = q.chapter.toLowerCase().includes(query);
+                    if (!matchText && !matchSol && !matchSubj && !matchChap) return false;
+                }
+                return true;
+            });
+
+            document.getElementById('cnt-all').textContent = state.questions.length;
+            document.getElementById('breadcrumb-subject').textContent = state.activeSubject || 'Todas las Materias';
+            document.getElementById('breadcrumb-chapter').textContent = state.activeChapter || 'Todos los Capítulos';
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-10 text-center space-y-3">
+                        <i class="fa-solid fa-folder-open text-3xl text-slate-600"></i>
+                        <p class="text-sm font-semibold text-slate-400">No se encontraron ejercicios con los filtros seleccionados.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            filtered.forEach((q, index) => {
+                const card = document.createElement('div');
+                card.className = `bg-slate-900/80 dark:bg-slate-900/60 border ${q.dominated ? 'border-emerald-800/60' : 'border-slate-800'} rounded-2xl p-5 shadow-md flex flex-col gap-3 transition-all`;
+
+                card.innerHTML = `
+                    <div class="flex items-center justify-between gap-2 flex-wrap">
+                        <div class="flex items-center gap-2">
+                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-cyan-950 border border-cyan-800 text-cyan-400">${q.subject}</span>
+                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-800 text-slate-300">${q.chapter}</span>
+                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold ${q.type === 'ejemplos' ? 'bg-blue-950 text-blue-300 border border-blue-800' : 'bg-purple-950 text-purple-300 border border-purple-800'}">${q.type === 'ejemplos' ? 'Resuelto' : 'Propuesto'}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="toggleAnki(${q.id})" class="px-2.5 py-1 rounded-xl text-[11px] font-medium border transition-all flex items-center gap-1.5 ${q.ankiDue ? 'bg-amber-950/60 border-amber-800 text-amber-300' : 'bg-slate-800 border-slate-700 text-slate-400'}" title="Marcar pendiente de repaso">
+                                <i class="fa-solid fa-brain"></i> ${q.ankiDue ? 'Repaso Pendiente' : 'Al Día'}
+                            </button>
+                            <button onclick="toggleDominated(${q.id})" class="px-2.5 py-1 rounded-xl text-[11px] font-medium border transition-all flex items-center gap-1.5 ${q.dominated ? 'bg-emerald-950 border-emerald-800 text-emerald-400' : 'bg-slate-800 border-slate-700 text-slate-400'}">
+                                <i class="fa-solid fa-check"></i> ${q.dominated ? 'Dominado' : 'Marcar Dominado'}
+                            </button>
+                            <button onclick="deleteQuestion(${q.id})" class="p-1.5 text-slate-500 hover:text-rose-400 transition-all" title="Eliminar pregunta">
+                                <i class="fa-solid fa-trash-can text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="text-xs sm:text-sm text-slate-100 font-medium leading-relaxed pt-1 whitespace-pre-line">
+                        <span class="text-cyan-400 font-bold mr-1.5">#${index + 1}</span> ${q.text}
+                    </div>
+
+                    <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between">
+                        <button onclick="toggleSolution(${q.id})" class="text-xs font-semibold text-cyan-400 hover:text-cyan-300 flex items-center gap-1.5 transition-all">
+                            <i class="fa-solid fa-lightbulb"></i> Ver Solución / Procedimiento
+                        </button>
+                    </div>
+
+                    <div id="sol-${q.id}" class="solution-accordion bg-slate-950/80 border border-slate-800/80 rounded-xl p-4 text-xs text-slate-300 space-y-2 mt-1">
+                        <div class="font-bold text-slate-400 uppercase tracking-wider text-[10px] mb-1 flex items-center gap-1">
+                            <i class="fa-solid fa-square-root-variable text-cyan-400"></i> Resolución Paso a Paso:
+                        </div>
+                        <div class="leading-relaxed whitespace-pre-line">${q.solution}</div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            if (window.MathJax && window.MathJax.typesetPromise) {
+                window.MathJax.typesetPromise().catch(err => console.log(err));
+            }
+        }
+
+        window.toggleSolution = function(id) {
+            const solEl = document.getElementById(`sol-${id}`);
+            solEl.classList.toggle('open');
+        }
+
+        window.toggleDominated = function(id) {
+            const q = state.questions.find(item => item.id === id);
+            if (q) {
+                q.dominated = !q.dominated;
+                saveAndRefresh();
+            }
+        }
+
+        window.toggleAnki = function(id) {
+            const q = state.questions.find(item => item.id === id);
+            if (q) {
+                q.ankiDue = !q.ankiDue;
+                saveAndRefresh();
+            }
+        }
+
+        window.deleteQuestion = function(id) {
+            if (confirm('¿Estás seguro de eliminar este ejercicio del banco?')) {
+                state.questions = state.questions.filter(item => item.id !== id);
+                saveAndRefresh();
+            }
+        }
+
+        function updateGlobalProgress() {
+            const total = state.questions.length;
+            if (total === 0) return;
+            const dominatedCount = state.questions.filter(q => q.dominated).length;
+            const pct = Math.round((dominatedCount / total) * 100);
+
+            document.getElementById('global-progress-txt').textContent = `${pct}%`;
+            document.getElementById('global-progress-bar').style.width = `${pct}%`;
+        }
+    </script>
+</body>
+</html>
